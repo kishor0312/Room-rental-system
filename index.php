@@ -6,17 +6,17 @@ include 'header.php';
 function checkLogin(isLoggedIn) {
     if (!isLoggedIn) {
         alert('You must be logged in to view more details.');
-        window.location.href = 'login.php'; // Redirect to login page
-        return false; // Prevent form submission
+        window.location.href = 'login.php';
+        return false;
     }
-    return true; // Allow form submission
+    return true;
 }
 </script>
 
 <!-- hero section -->
 <section class="hero">
     <div class="herosec">
-        <form class="searchbar" action="" method="GET">
+        <form class="searchbar" onsubmit="return false;">
             <input type="text" name="location" id="location" class="searchinput" placeholder="Enter Location">
             <input type="text" name="price" id="price" class="searchinput" placeholder="Enter Price">
             <select name="type" id="type" class="searchinput">
@@ -26,7 +26,7 @@ function checkLogin(isLoggedIn) {
                 <option value="Flats and Apartment">Flats and Apartment</option>
                 <option value="Hostel Rooms">Hostel Rooms</option>
             </select>
-            <button type="submit" class="searchbtn"><i class="fa-solid fa-magnifying-glass"></i></button>
+            <button type="button" class="searchbtn" id="searchBtn"><i class="fa-solid fa-magnifying-glass"></i></button>
         </form>
     </div>
 </section>
@@ -57,139 +57,42 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'landlord') {
 
 <!-- featured property listing -->
 <section class="featured">
-    <div class="box-container">
-        <?php
-            // Check if user is logged in
-            $logged_in = isset($_SESSION['loggedin']) === true;
-
-            // Construct the SQL Query
-            $query = "SELECT * FROM prop_detail WHERE 1=1";
-            if (isset($_GET['location']) && !empty($_GET['location'])) {
-                $location = mysqli_real_escape_string($conn, $_GET['location']);
-                $query .= " AND location LIKE '%$location%'";
-            }
-            if (isset($_GET['price']) && !empty($_GET['price'])) {
-                $price = mysqli_real_escape_string($conn, $_GET['price']);
-                $query .= " AND price <= '$price'";
-            }
-            if (isset($_GET['type']) && !empty($_GET['type'])) {
-                $type = mysqli_real_escape_string($conn, $_GET['type']);
-                $query .= " AND type LIKE '%$type%'";
-            }
-
-            // Execute the SQL Query
-            $result = mysqli_query($conn, $query);
-
-            // Check if records are found
-            if (mysqli_num_rows($result) > 0) {
-                // Display Filtered Results
-                while ($row = mysqli_fetch_assoc($result)) {
-                    $id = $row["prod_id"];
-                    $title = $row["title"];
-                    $price = $row["price"];
-                    $location = $row["location"];
-                    $image = $row["image"];
-                    $area = $row["area"];
-                    $bedroom = $row["bedroom"];
-                    $bathroom = $row["bathroom"];
-                    echo "
-                    <div class='box'>
-                        <div class='image-container'>
-                            <img src='./Admin/property_images/$image' alt='roomimage'>
-                            <div class='info'>
-                                <h3>3 days ago</h3>
-                                <h3>for rent</h3>
-                            </div>
-                            <div class='icon'>
-                                <a href='#' class='fas fa-film'>
-                                    <h3>2</h3>
-                                </a>
-                                <a href='#' class='fas fa-camera'>
-                                    <h3>6</h3>
-                                </a>
-                            </div>
-                        </div>
-                        <div class='content'>
-                            <div class='price'>
-                                <h3>$price/Month</h3>
-                                <a href='#' class='fas fa-envelope'></a>
-                                <a href='#' class='fas fa-phone'></a>
-                            </div>
-                        </div>
-                        <div class='location'>
-                            <h3>$title </h3>
-                            <p>$location</p>
-                        </div>
-                        <div class='detail'>
-                            <h3><i class='fas fa-expand'></i> $area sqft</h3>
-                            <h3><i class='fas fa-bed'></i> $bedroom bed</h3>
-                            <h3><i class='fas fa-bath'></i> $bathroom bath</h3>
-                        </div>
-                        <form method='GET' class='buttons' action='card_detail.php' onsubmit='return checkLogin($logged_in)'>  
-                             <input type='hidden' name='id' value='$id'>         
-                            <button type='submit' class='btn'>More Detail</button>
-                        </form>
-                    </div>";
-                }
-            } else {
-                // Display alert message if no records found
-                echo "<script>alert('No records found. Displaying all properties.');</script>";
-                
-                // Fetch and display all properties
-                $all_properties_query = "SELECT * FROM prop_detail";
-                $all_properties_result = mysqli_query($conn, $all_properties_query);
-                while ($row = mysqli_fetch_assoc($all_properties_result)) {
-                    $id = $row["prod_id"];
-                    $title = $row["title"];
-                    $price = $row["price"];
-                    $location = $row["location"];
-                    $image = $row["image"];
-                    $area = $row["area"];
-                    $bedroom = $row["bedroom"];
-                    $bathroom = $row["bathroom"];
-                    echo "
-                    <div class='box'>
-                        <div class='image-container'>
-                            <img src='./Admin/property_images/$image' alt='roomimage'>
-                            <div class='info'>
-                                <h3>3 days ago</h3>
-                                <h3>for rent</h3>
-                            </div>
-                            <div class='icon'>
-                                <a href='#' class='fas fa-film'>
-                                    <h3>2</h3>
-                                </a>
-                                <a href='#' class='fas fa-camera'>
-                                    <h3>6</h3>
-                                </a>
-                            </div>
-                        </div>
-                        <div class='content'>
-                            <div class='price'>
-                                <h3>$price/Month</h3>
-                                <a href='#' class='fas fa-envelope'></a>
-                                <a href='#' class='fas fa-phone'></a>
-                            </div>
-                        </div>
-                        <div class='location'>
-                            <h3>$title </h3>
-                            <p>$location</p>
-                        </div>
-                        <div class='detail'>
-                            <h3><i class='fas fa-expand'></i> $area sqft</h3>
-                            <h3><i class='fas fa-bed'></i> $bedroom bed</h3>
-                            <h3><i class='fas fa-bath'></i> $bathroom bath</h3>
-                        </div>
-                        <form method='GET' class='buttons' action='card_detail.php' onsubmit='return checkLogin($logged_in)'>  
-                             <input type='hidden' name='id' value='$id'>         
-                            <button type='submit' class='btn'>More Detail</button>
-                        </form>
-                    </div>";
-                }
-            }
-        ?>
+    <div class="box-container" id="propertyList">
+        <!-- Properties will be loaded here by AJAX -->
     </div>
 </section>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function(){
+    function fetchProperties(){
+        var location = $("#location").val();
+        var price = $("#price").val();
+        var type = $("#type").val();
+        
+        $.ajax({
+            url: "fetch_properties.php",
+            method: "GET",
+            data: {location: location, price: price, type: type},
+            success: function(data){
+                $("#propertyList").html(data);
+            }
+        });
+    }
+
+    // Fetch all properties on page load
+    fetchProperties();
+
+    // Live search on typing or changing filters
+    $("#location, #price, #type").on("input change", function(){
+        fetchProperties();
+    });
+
+    $("#searchBtn").click(function(){
+        fetchProperties();
+    });
+});
+</script>
 
 <!-- footer -->
 <?php
