@@ -36,18 +36,10 @@ if (mysqli_num_rows($result) > 0) {
         <div class='box'>
             <div class='image-container'>
                 <img src='./Admin/property_images/$image' alt='roomimage'>
-                <div class='info'>
-                    <h3>3 days ago</h3>
-                    <h3>for rent</h3>
-                </div>
-                <div class='icon'>
-                    <a href='#' class='fas fa-film'><h3>2</h3></a>
-                    <a href='#' class='fas fa-camera'><h3>6</h3></a>
-                </div>
             </div>
             <div class='content'>
                 <div class='price'>
-                    <h3>$price/Month</h3>
+                    <h3>$price / Month</h3>
                     <a href='#' class='fas fa-envelope'></a>
                     <a href='#' class='fas fa-phone'></a>
                 </div>
