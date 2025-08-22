@@ -1,3 +1,8 @@
+<?php
+
+session_start();
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -142,8 +147,35 @@
 
     <?php
         include "config.php";
+        include "recommend.php";
+
         $s = hash_hmac('sha256', 'Message', 'secret', true);
         $id = $_GET['id'];
+        if (!$id) {
+            echo "<h3>Invalid property ID.</h3>";
+            exit;
+        }
+
+        $similar_items = get_recommended_items_for_curr_product($id);
+        $q = "select * from interaction_log where prop_id=? and uid=?";
+        $stmt = $conn->prepare($q);
+
+        $stmt->bind_param("ii", $id,$_SESSION['id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if (!$result) {
+            echo "<h3>Error fetching property details: " . $conn->error . "</h3>";
+            exit;
+        }
+        if ($result->num_rows == 0) {
+            $q1 = "insert into interaction_log(prop_id,weight,uid) values(?,0.5,?)";
+            $stmt1 = $conn->prepare($q1);
+            $stmt1->bind_param("ii", $id, $_SESSION['id']);
+            if (!$stmt1->execute()) {
+                echo "<h3>Error logging interaction: " . $stmt1->error . "</h3>";
+            }
+        }
+        
         $query = "SELECT * FROM prop_detail WHERE prod_id='$id'";
         $result = mysqli_query($conn, $query);  
         while ($row = mysqli_fetch_assoc($result)) {
@@ -192,13 +224,37 @@
             <input type="hidden" id="product_code" name="product_code" value="EPAYTEST" required>
             <input type="hidden" id="product_service_charge" name="product_service_charge" value="0" required>
             <input type="hidden" id="product_delivery_charge" name="product_delivery_charge" value="0" required>
-            <input type="hidden" id="success_url" name="success_url" value="https://esewa.com.np" required>
+            <input type="hidden" id="success_url" name="success_url" value="http://localhost/book_success?id=$id" required>
             <input type="hidden" id="failure_url" name="failure_url" value="https://google.com" required>
             <input type="hidden" id="signed_field_names" name="signed_field_names" value="total_amount,transaction_uuid,product_code" required>
             <input type="hidden" id="signature" name="signature" value="<?php echo base64_encode($s); ?>" required>
             <input class="btn" value="Book now" type="submit">
         </form>
     </div>
+</div>
+<div>
+    <?php
+        if(count($similar_items) > 0) {
+            $query = "SELECT * FROM prop_detail WHERE prod_id IN (" . implode(',', $similar_items) . ")";
+            $result = mysqli_query($conn, $query);
+            if (!$result) {
+                echo "<h3>Error fetching similar properties: " . mysqli_error($conn) . "</h3>";
+                exit;
+            }
+            echo "<ul>";
+
+            while ($row = mysqli_fetch_assoc($result)) {
+                $id = $row["prod_id"];
+                $title = $row["title"];
+                $price = $row["price"];
+
+                echo "title : ". $title;
+                echo "&nbsp; &nbsp;price : ". $price;
+                echo "<br>";
+            };
+            echo "</ul>";
+        }
+    ?>
 </div>
 </body>
 </html>

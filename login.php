@@ -57,6 +57,7 @@ if(isset($_POST['submit'])){
         $_SESSION['email'] = $email;
         $_SESSION['loggedin'] = true;
         $_SESSION['id'] = $row['id'];
+
         $_SESSION['role']=$row['role'];
         // var_dump($_SESSION['id']);      
         // die();

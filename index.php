@@ -62,6 +62,23 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'landlord') {
     </div>
 </section>
 
+
+
+<?php
+if (!isset($_SESSION['role']) || isset($_SESSION['role']) && $_SESSION['role'] !== 'landlord') {
+    echo "
+    <section class='feat-introbox' id='featured'>
+        <div class='feat-head'>
+                <h1> Recommended For you </h1>
+        </div>
+    </section>";
+}
+?>
+<section class="featured">
+    <div class="box-container" id="recommendedPropertyList">
+        <!-- Properties will be loaded here by AJAX -->
+    </div>
+</section>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function(){
@@ -80,8 +97,18 @@ $(document).ready(function(){
         });
     }
 
+    function fetchRecommendedProperties(){
+        $.ajax({
+            url: "recommend_properties.php",
+            method: "GET",
+            success: function(data){
+                $("#recommendedPropertyList").html(data);
+            }
+        });
+    }
     // Fetch all properties on page load
     fetchProperties();
+    fetchRecommendedProperties();
 
     // Live search on typing or changing filters
     $("#location, #price, #type").on("input change", function(){
