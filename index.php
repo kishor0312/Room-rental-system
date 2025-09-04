@@ -69,7 +69,7 @@ if (!isset($_SESSION['role']) || isset($_SESSION['role']) && $_SESSION['role'] !
     echo "
     <section class='feat-introbox' id='featured'>
         <div class='feat-head'>
-                <h1> Recommended For you </h1>
+             
         </div>
     </section>";
 }
@@ -120,6 +120,8 @@ $(document).ready(function(){
     });
 });
 </script>
+
+
 
 <!-- footer -->
 <?php

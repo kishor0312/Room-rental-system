@@ -1,7 +1,5 @@
 <?php
-
 session_start();
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -10,6 +8,7 @@ session_start();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Property Detail</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -105,8 +104,12 @@ session_start();
         .btn:hover {
             background: #d35400;
         }
-
-        /* Responsive adjustments */
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-top: 30px;
+            border-radius: 15px;
+        }
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -125,6 +128,8 @@ session_start();
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/hmac-sha256.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/enc-base64.min.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <script>
     function generateSignature() {
         var currentTime = new Date();
@@ -157,9 +162,9 @@ session_start();
         }
 
         $similar_items = get_recommended_items_for_curr_product($id);
+
         $q = "select * from interaction_log where prop_id=? and uid=?";
         $stmt = $conn->prepare($q);
-
         $stmt->bind_param("ii", $id,$_SESSION['id']);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -171,11 +176,9 @@ session_start();
             $q1 = "insert into interaction_log(prop_id,weight,uid) values(?,0.5,?)";
             $stmt1 = $conn->prepare($q1);
             $stmt1->bind_param("ii", $id, $_SESSION['id']);
-            if (!$stmt1->execute()) {
-                echo "<h3>Error logging interaction: " . $stmt1->error . "</h3>";
-            }
+            $stmt1->execute();
         }
-        
+
         $query = "SELECT * FROM prop_detail WHERE prod_id='$id'";
         $result = mysqli_query($conn, $query);  
         while ($row = mysqli_fetch_assoc($result)) {
@@ -216,7 +219,7 @@ session_start();
     ?>
 
     <div class="buttons">
-        <form action="https://rc-epay.esewa.com.np/api/epay/main/v2/form"  method="POST" onsubmit="generateSignature()" target="_blank">
+        <form action="https://rc-epay.esewa.com.np/api/epay/main/v2/form" method="POST" onsubmit="generateSignature()" target="_blank">
             <input type="hidden" id="amount" name="amount" value="<?php echo $price ?>" required>
             <input type="hidden" id="tax_amount" name="tax_amount" value="0" required>
             <input type="hidden" id="total_amount" name="total_amount" value="<?php echo $price ?>" required>
@@ -224,37 +227,39 @@ session_start();
             <input type="hidden" id="product_code" name="product_code" value="EPAYTEST" required>
             <input type="hidden" id="product_service_charge" name="product_service_charge" value="0" required>
             <input type="hidden" id="product_delivery_charge" name="product_delivery_charge" value="0" required>
-            <input type="hidden" id="success_url" name="success_url" value="http://localhost/book_success?id=$id" required>
+            <input type="hidden" id="success_url" name="success_url" value="http://localhost/book_success?id=<?php echo $id ?>" required>
             <input type="hidden" id="failure_url" name="failure_url" value="https://google.com" required>
             <input type="hidden" id="signed_field_names" name="signed_field_names" value="total_amount,transaction_uuid,product_code" required>
             <input type="hidden" id="signature" name="signature" value="<?php echo base64_encode($s); ?>" required>
             <input class="btn" value="Book now" type="submit">
         </form>
     </div>
-</div>
-<div>
-    <?php
-        if(count($similar_items) > 0) {
-            $query = "SELECT * FROM prop_detail WHERE prod_id IN (" . implode(',', $similar_items) . ")";
-            $result = mysqli_query($conn, $query);
-            if (!$result) {
-                echo "<h3>Error fetching similar properties: " . mysqli_error($conn) . "</h3>";
-                exit;
-            }
-            echo "<ul>";
 
-            while ($row = mysqli_fetch_assoc($result)) {
-                $id = $row["prod_id"];
-                $title = $row["title"];
-                $price = $row["price"];
+    <!-- Street Map -->
+    <div id="map"></div>
+    <script>
+        // Default coordinates (Kathmandu) if geocoding not available
+        var lat = 27.7172;
+        var lng = 85.3240;
 
-                echo "title : ". $title;
-                echo "&nbsp; &nbsp;price : ". $price;
-                echo "<br>";
-            };
-            echo "</ul>";
-        }
-    ?>
+        // Use PHP location
+        var locationText = "<?php echo $location; ?>";
+
+        // Initialize Leaflet map
+        var map = L.map('map').setView([lat, lng], 13);
+
+        // Add tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Add marker
+        L.marker([lat, lng]).addTo(map)
+            .bindPopup(locationText)
+            .openPopup();
+    </script>
+
 </div>
 </body>
 </html>

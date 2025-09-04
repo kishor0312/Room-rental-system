@@ -1,4 +1,5 @@
 <?php
+session_start();
 include 'config.php';
 include 'recommend.php';
 $logged_in = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
@@ -11,6 +12,16 @@ $query = "SELECT * FROM prop_detail WHERE prod_id in ($recommended)";
 $result = mysqli_query($conn, $query);
 
 if (mysqli_num_rows($result) > 0) {
+
+    // Wrap title and cards in one section
+    echo "<div class='recommended-section' style='text-align:center; margin-bottom:30px;'>";
+
+    // Title above all cards with no bottom margin
+    echo "<h2 style='font-weight:bold; font-size:32px; margin:0 0 10px 0;'>Recommended for you</h2>";
+
+    // Cards container (flex/grid)
+    echo "<div class='recommended-cards' style='display:flex; flex-wrap:wrap; justify-content:center; gap:20px; margin-top:0;'>";
+
     while ($row = mysqli_fetch_assoc($result)) {
         $id = $row["prod_id"];
         $title = $row["title"];
@@ -22,9 +33,9 @@ if (mysqli_num_rows($result) > 0) {
         $bathroom = $row["bathroom"];
 
         echo "
-        <div class='box'>
+        <div class='box' style='width:300px; border:1px solid #ccc; padding:10px; border-radius:8px;'>
             <div class='image-container'>
-                <img src='./Admin/property_images/$image' alt='roomimage'>
+                <img src='./Admin/property_images/$image' alt='roomimage' style='width:100%; height:auto; border-radius:5px;'>
             </div>
             <div class='content'>
                 <div class='price'>
@@ -49,7 +60,8 @@ if (mysqli_num_rows($result) > 0) {
         </div>
         ";
     }
-} else {
-    echo "<p style='color:red;'>No properties found.</p>";
+
+    echo "</div>"; // close recommended-cards
+    echo "</div>"; // close recommended-section
 }
 ?>
