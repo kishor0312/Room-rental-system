@@ -2,24 +2,32 @@
 session_start();
 include 'config.php';
 include 'recommend.php';
-$logged_in = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
 
+// Check login and role
+$logged_in = isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true;
+$role = isset($_SESSION['role']) ? $_SESSION['role'] : null;
+
+// If landlord, do not recommend anything
+if ($role === 'landlord') {
+    exit; // just stop here, landlord won't see recommended section
+}
+
+// Only proceed if tenant
 $recommended = get_recommended_items_for_curr_user();
-if(count($recommended) ==0) exit;
+if (count($recommended) == 0) exit;
+
 $recommended = implode(",", $recommended);
 $query = "SELECT * FROM prop_detail WHERE prod_id in ($recommended)";
-
 $result = mysqli_query($conn, $query);
 
 if (mysqli_num_rows($result) > 0) {
-
     // Wrap title and cards in one section
     echo "<div class='recommended-section' style='text-align:center; margin-bottom:30px;'>";
 
-    // Title above all cards with no bottom margin
+    // Title above all cards
     echo "<h2 style='font-weight:bold; font-size:32px; margin:0 0 10px 0;'>Recommended for you</h2>";
 
-    // Cards container (flex/grid)
+    // Cards container
     echo "<div class='recommended-cards' style='display:flex; flex-wrap:wrap; justify-content:center; gap:20px; margin-top:0;'>";
 
     while ($row = mysqli_fetch_assoc($result)) {
@@ -35,7 +43,7 @@ if (mysqli_num_rows($result) > 0) {
         echo "
         <div class='box' style='width:300px; border:1px solid #ccc; padding:10px; border-radius:8px;'>
             <div class='image-container'>
-                <img src='./Admin/property_images/$image' alt='roomimage' style='width:100%; height:auto; border-radius:5px;'>
+                <img src='./Admin/property_images/$image' alt='room image' style='width:100%; height:auto; border-radius:5px;'>
             </div>
             <div class='content'>
                 <div class='price'>

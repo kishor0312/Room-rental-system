@@ -2,6 +2,13 @@
 include 'header.php';
 ?>
 
+<style>
+/* Zoom out the whole page */
+body {
+    zoom: 0.7; /* Shrinks page to 70% */
+}
+</style>
+
 <script>
 function checkLogin(isLoggedIn) {
     if (!isLoggedIn) {
@@ -62,23 +69,21 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'landlord') {
     </div>
 </section>
 
-
-
 <?php
-if (!isset($_SESSION['role']) || isset($_SESSION['role']) && $_SESSION['role'] !== 'landlord') {
+if (!isset($_SESSION['role']) || (isset($_SESSION['role']) && $_SESSION['role'] !== 'landlord')) {
     echo "
     <section class='feat-introbox' id='featured'>
         <div class='feat-head'>
-             
         </div>
     </section>";
 }
 ?>
 <section class="featured">
     <div class="box-container" id="recommendedPropertyList">
-        <!-- Properties will be loaded here by AJAX -->
+        <!-- Recommended Properties will be loaded here by AJAX -->
     </div>
 </section>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function(){
@@ -106,6 +111,7 @@ $(document).ready(function(){
             }
         });
     }
+
     // Fetch all properties on page load
     fetchProperties();
     fetchRecommendedProperties();
@@ -120,8 +126,6 @@ $(document).ready(function(){
     });
 });
 </script>
-
-
 
 <!-- footer -->
 <?php
