@@ -1,6 +1,5 @@
 <?php
 
-
 function to_float($v, $default = 0.0) {
     if ($v === null || $v === '') return (float)$default;
     return (float)$v;
@@ -46,7 +45,7 @@ function distance($a, $b, $weight = 1.0) {
 }
 
 function build_global_schema_and_rows($conn) {
-    $sql = "SELECT prod_id, price, location, bedroom, area, bathroom FROM prop_detail";
+    $sql = "SELECT prod_id, title, price, location, bedroom, area, bathroom FROM prop_detail";
     $res = $conn->query($sql);
     if (!$res) die("Query failed: " . $conn->error);
 
@@ -54,6 +53,7 @@ function build_global_schema_and_rows($conn) {
     $price_vals = $area_vals = $locations = $bedrooms = $bathrooms = [];
 
     while ($r = $res->fetch_assoc()) {
+        $r['title']    = isset($r['title']) ? trim(strtolower($r['title'])) : '';
         $r['location'] = isset($r['location']) ? trim($r['location']) : '';
         $r['bedroom']  = isset($r['bedroom']) ? trim($r['bedroom']) : '';
         $r['bathroom'] = isset($r['bathroom']) ? trim($r['bathroom']) : '';
@@ -94,6 +94,7 @@ function vectorize_row($row, $schema) {
 
     return [
         'prop_id'  => $row['prod_id'],
+        'title'    => strtolower($row['title']),
         'price'    => $price_s,
         'area'     => $area_s,
         'location' => one_hot_encode_value($row['location'], $schema['location']),
@@ -109,14 +110,12 @@ function knn_recommend($conn, $curr_items_raw, $k = 5) {
 
     $db_vectorized = [];
     foreach ($db_rows as $r) {
-        $db_vectorized[$r['prod_id']] = vectorize_row($r, $schema);
+        $vec = vectorize_row($r, $schema);
+        $db_vectorized[$r['prod_id']] = $vec;
     }
 
-    $curr_rows = [];
-    foreach ($curr_items_raw as $r) $curr_rows[] = $r;
-
     $curr_vectorized = [];
-    foreach ($curr_rows as $r) {
+    foreach ($curr_items_raw as $r) {
         $vec = vectorize_row($r, $schema);
         $vec['weight'] = isset($r['weight']) ? (float)$r['weight'] : 1.0;
         $curr_vectorized[] = $vec;
@@ -125,10 +124,19 @@ function knn_recommend($conn, $curr_items_raw, $k = 5) {
     $distances_best = [];
     foreach ($curr_vectorized as $curr) {
         $flat_curr = build_flat_vector_from_vectorized($curr, $schema);
+
         foreach ($db_vectorized as $db_prod_id => $db_vec) {
             if ($db_prod_id == $curr['prop_id']) continue;
+
             $flat_db = build_flat_vector_from_vectorized($db_vec, $schema);
             $dist = distance($flat_curr, $flat_db, $curr['weight']);
+
+            // 🆕 Title priority
+            if ($curr['title'] === $db_vec['title']) {
+                $dist -= 0.5; // reduce distance if same title
+                if ($dist < 0) $dist = 0; // avoid negative distances
+            }
+
             if (!isset($distances_best[$db_prod_id]) || $dist < $distances_best[$db_prod_id]) {
                 $distances_best[$db_prod_id] = $dist;
             }
@@ -145,7 +153,7 @@ function get_recommended_items_for_curr_user($k = 5) {
     if (!isset($_SESSION['id'])) return [];
     $uid = $_SESSION['id'];
 
-    $sql = "SELECT il.prop_id AS prod_id, pd.price, pd.location, pd.bedroom, pd.area, pd.bathroom, il.weight 
+    $sql = "SELECT il.prop_id AS prod_id, pd.title, pd.price, pd.location, pd.bedroom, pd.area, pd.bathroom, il.weight 
             FROM interaction_log il
             JOIN prop_detail pd ON il.prop_id = pd.prod_id
             WHERE il.uid = ?";
@@ -160,6 +168,7 @@ function get_recommended_items_for_curr_user($k = 5) {
     while ($r = $res->fetch_assoc()) {
         $curr_rows[] = [
             'prod_id'  => $r['prod_id'],
+            'title'    => $r['title'],
             'price'    => $r['price'],
             'location' => $r['location'],
             'bedroom'  => $r['bedroom'],
@@ -175,7 +184,7 @@ function get_recommended_items_for_curr_product($id, $k = 5) {
     include 'config.php';
     if (!isset($id)) return [];
 
-    $sql = "SELECT prod_id, price, location, bedroom, area, bathroom FROM prop_detail WHERE prod_id = ?";
+    $sql = "SELECT prod_id, title, price, location, bedroom, area, bathroom FROM prop_detail WHERE prod_id = ?";
     $stmt = $conn->prepare($sql);
     if (!$stmt) die("Prepare failed: " . $conn->error);
     $stmt->bind_param("i", $id);
@@ -187,6 +196,7 @@ function get_recommended_items_for_curr_product($id, $k = 5) {
     $r = $res->fetch_assoc();
     $curr_rows = [[
         'prod_id'  => $r['prod_id'],
+        'title'    => $r['title'],
         'price'    => $r['price'],
         'location' => $r['location'],
         'bedroom'  => $r['bedroom'],
