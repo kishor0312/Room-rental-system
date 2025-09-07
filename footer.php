@@ -121,7 +121,7 @@ echo '
     </div>
 </div>
 <div class="footer copyright">
-    <div>Copyright © 2024 - saharighar.com - All rights reserved.</div>
+    <div>Copyright © 2025 - saharighar.com - All rights reserved.</div>
 </div>
 ';
 ?>
